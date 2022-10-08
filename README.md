@@ -1,7 +1,8 @@
 # Scarpet Formatter
 
 This extension wraps [js-beautify](https://github.com/beautify-web/js-beautify) to format your Scarpet Script.
-This project is modifying based on "Lonefy/vscode-JS-CSS-HTML-formatter" under MIT license, new code of this project is under gpl-v3 license
+
+This project is modifying based on [Lonefy/vscode-JS-CSS-HTML-formatter](https://github.com/Lonefy/vscode-JS-CSS-HTML-formatter) under MIT license, new code of this project will under gpl-v3 license
 
 ## How To Use
 
