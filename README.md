@@ -1,8 +1,9 @@
-## VS Code JS, CSS, HTML Formatting
+# Scarpet Formatter
 
-This extension wraps [js-beautify](https://github.com/beautify-web/js-beautify) to format your JS, CSS, HTML, JSON file.
+This extension wraps [js-beautify](https://github.com/beautify-web/js-beautify) to format your Scarpet Script.
+This project is modifying based on "Lonefy/vscode-JS-CSS-HTML-formatter" under MIT license, new code of this project is under gpl-v3 license
 
-##How To Use
+## How To Use
 
 *  open `Context Menu` and choose `Format Code`
 *  shortcuts: `Alt+Shift+F`
@@ -10,10 +11,10 @@ This extension wraps [js-beautify](https://github.com/beautify-web/js-beautify) 
 
 >the upper 3 ways don't work for `Javascript`&`JSON` after `vscode v0.10.10`, but you can still format `CSS` and `HTML`.
 
-###To format **Javascript,CSS and HTML** after vscode v0.10.10
+### To format **Javascript,CSS and HTML** after vscode v0.10.10
 *  CLI: Press `F1`,enter `Formatter`
 
-##Config
+## Config
 
 1. Press `F1`, enter `Formatter Config`, open the config file:
 
@@ -25,41 +26,7 @@ This extension wraps [js-beautify](https://github.com/beautify-web/js-beautify) 
 
 3. `Restart` vscode  **[!Important]**
 
-## License
-[MIT](https://github.com/lonefy/vscode-js-css-html-formatter/blob/master/LICENSE)
 
-##Bug and Issue
-[Issue](https://github.com/Lonefy/vscode-JS-CSS-HTML-formatter/issues)
 
-##Changes Log：
-###0.2.3 31 Mar 2017
-* (BUG FIX): Try to fix the saving problem
-
-###0.2.2 23 Nov 2016
-* (BUG FIX): `onSave` feature.Try to fix the `Save loop` problem.[Issue #20](https://github.com/Lonefy/vscode-JS-CSS-HTML-formatter/issues/20)
-* New VSCode API changes:[Issue #30](https://github.com/Lonefy/vscode-JS-CSS-HTML-formatter/issues/30);
-
-###0.2.0 20 July 2016
-* New Feature: `SCSS support`[Issue #14](https://github.com/Lonefy/vscode-JS-CSS-HTML-formatter/issues/14)
-
-###0.1.32 15 July 2016
-* (BUG FIX) Path maybe undefined
-* ES6/7 Import Syntax **Need to update your `formatter.json` file** [Issue #9](https://github.com/Lonefy/vscode-JS-CSS-HTML-formatter/issues/9)
-* Avoid line break to indent the CSS code[Issue #8](https://github.com/Lonefy/vscode-JS-CSS-HTML-formatter/issues/8) 
-
-###0.1.3 06 May 2016
-* New Feature: `on save`.[Issue #4](https://github.com/Lonefy/vscode-JS-CSS-HTML-formatter/issues/4)
-
-    Add a new field in config file `onSave`(default true);
-
-* New Feature: `local config file`. [Issue#3](https://github.com/Lonefy/vscode-JS-CSS-HTML-formatter/issues/3)
-    
-    Use `F1-> Formatter Create Local Config` to generate the local config file in `.vscode folder` of your project. Formatter will use the **local config file** first.
-   
-* Support `JSON` file.
-
-###0.1.0 26 Mar 2016
-* add Config file ,you can format your code as your own settings.  
-
-##THANKS:
-rjmacarthy, zhaopengme, Arrow7000, bitwiseman
+## THANKS:
+rjmacarthy, zhaopengme, Arrow7000, bitwiseman, Lonefy

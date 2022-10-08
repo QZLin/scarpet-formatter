@@ -1,9 +1,9 @@
 {
-    "name": "vscode-JS-CSS-HTML-formatter",
-    "displayName": "JS-CSS-HTML Formatter",
-    "description": "Format ,prettify and beautify JS, CSS, HTML code by using shortcuts, context menu or CLI",
-    "version": "0.2.3",
-    "publisher": "lonefy",
+    "name": "scarpet-formatter",
+    "displayName": "Scarpet Formatter",
+    "description": "Format ,prettify and beautify Scarpet code by using shortcuts, context menu or CLI",
+    "version": "0.0.1",
+    "publisher": "Q.Z.Lin",
     "galleryBanner": {
         "color": "#e5e5e5",
         "theme": "light"
@@ -11,42 +11,42 @@
     "categories": [
         "Other",
         "Formatters",
-        "Languages"
+        "Programming Languages"
     ],
-    "license": "MIT",
+    "license": "GPL-V3",
     "bugs": {
-        "url": "https://github.com/lonefy/vscode-js-css-html-formatter/issues",
-        "email": "lonefy@foxmail.com"
+        "url": "https://github.com/qzlin/scarpet-formatter/issues",
+        "email": "qzlin01@163.com"
     },
-    "homepage": "https://github.com/lonefy/vscode-js-css-html-formatter/blob/master/README.md",
+    "homepage": "https://github.com/qzlin/scarpet-formatter/blob/master/README.md",
     "repository": {
         "type": "git",
-        "url": "https://github.com/lonefy/vscode-js-css-html-formatter"
+        "url": "https://github.com/qzlin/scarpet-formatter"
     },
     "engines": {
         "vscode": "^1.6.0"
     },
     "activationEvents": [
-        "onLanguage:json",
-        "onLanguage:css",
-        "onLanguage:javascript",
-        "onLanguage:html",
-        "onLanguage:scss",
-        "onCommand:Lonefy.formatting",
-        "onCommand:Lonefy.formatterConfig",
-        "onCommand:Lonefy.formatterCreateLocalConfig"
+        "onLanguage:scarpet",
+        "onCommand:ScarpetFormatter.formatting",
+        "onCommand:ScarpetFormatter.formatterConfig",
+        "onCommand:ScarpetFormatter.formatterCreateLocalConfig"
     ],
     "contributes": {
-        "commands": [{
-            "command": "Lonefy.formatting",
-            "title": "Formatter"
-        }, {
-            "command": "Lonefy.formatterConfig",
-            "title": "Formatter Config"
-        }, {
-            "command": "Lonefy.formatterCreateLocalConfig",
-            "title": "Formatter Create Local Config"
-        }]
+        "commands": [
+            {
+                "command": "ScarpetFormatter.formatting",
+                "title": "Formatter"
+            },
+            {
+                "command": "ScarpetFormatter.formatterConfig",
+                "title": "Formatter Config"
+            },
+            {
+                "command": "ScarpetFormatter.formatterCreateLocalConfig",
+                "title": "Formatter Create Local Config"
+            }
+        ]
     },
     "main": "./out/src/extension",
     "scripts": {
@@ -59,10 +59,10 @@
         "mkdirp": "^0.5.1"
     },
     "devDependencies": {
-        "typescript": "^2.0.3",
-        "vscode": "^1.0.0",
         "@types/node": "^6.0.40",
+        "@types/resolve-from": "0.0.18",
         "@types/strip-json-comments": "^0.0.28",
-        "@types/resolve-from": "0.0.18"
+        "typescript": "^2.0.3",
+        "vscode": "^1.1.37"
     }
 }

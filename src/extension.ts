@@ -39,18 +39,8 @@ function beatify(documentContent: String, languageId) {
     var beatiFunc = null;
 
     switch (languageId) {
-        case 'scss':
-            languageId = 'css';
-        case 'css':
-            beatiFunc = jsbeautify.css;
-            break;
-        case 'json':
-            languageId = 'javascript';
-        case 'javascript':
+        case 'scarpet':
             beatiFunc = jsbeautify.js;
-            break;
-        case 'html':
-            beatiFunc = jsbeautify.html;
             break;
         default:
             showMesage('Sorry, this language is not supported. Only support Javascript, CSS and HTML.');
@@ -68,15 +58,20 @@ function beatify(documentContent: String, languageId) {
             beutifyOptions = {};
         }
     }
+    var content = documentContent.replace(/->/g, '/*->*/ =');
+    // content=content.replaceAll(';','/**/ ,')
+    var result = beatiFunc(content, beutifyOptions)
+    result = result.replaceAll('/*->*/ =', '->');
+    // result = result.replaceAll('/**/ ,', ';')
 
-    return beatiFunc(documentContent, beutifyOptions);
+    return result;
 }
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-    var docType: Array<string> = ['css', 'scss', 'javascript', 'html', 'json'];
+    var docType: Array<string> = ['scarpet'];
 
     for (var i = 0, l = docType.length; i < l; i++) {
         registerDocType(docType[i]);
@@ -84,12 +79,12 @@ export function activate(context: vscode.ExtensionContext) {
 
     let formatter = new Formatter();
 
-    context.subscriptions.push(vscode.commands.registerCommand('Lonefy.formatting', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('ScarpetFormatter.formatting', () => {
         formatter.beautify();
     }));
 
 
-    context.subscriptions.push(vscode.commands.registerCommand('Lonefy.formatterConfig', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('ScarpetFormatter.formatterConfig', () => {
 
         formatter.openConfig(
             path.join(getRootPath(), '.vscode', 'formatter.json'),
@@ -110,7 +105,7 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 
 
-    context.subscriptions.push(vscode.commands.registerCommand('Lonefy.formatterCreateLocalConfig', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('ScarpetFormatter.formatterCreateLocalConfig', () => {
         formatter.generateLocalConfig();
     }));
 
