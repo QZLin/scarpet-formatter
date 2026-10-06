@@ -118,7 +118,7 @@ ignored, because the previous implementation never actually formatted Scarpet fr
 ## Command line
 
 The project is built with [pnpm](https://pnpm.io) (there is no runtime dependency, pnpm only installs the TypeScript
-toolchain):
+toolchain and `@vscode/vsce` for packaging):
 
 ```console
 pnpm install
@@ -161,7 +161,9 @@ pnpm test                 # tsc + node --test
 ```
 
 `pnpm-lock.yaml` is committed; use `pnpm install --frozen-lockfile` in CI. The scripts shell out to `pnpm run`, so
-`npm`/`yarn` are not needed - and no package is needed at runtime either.
+`npm`/`yarn` are not needed - and no package is needed at runtime either. `pnpm-workspace.yaml` only records that the
+build script of `@vscode/vsce-sign` (the signing helper of vsce, unused here) is not run - pnpm 12 refuses to install
+until that decision is written down.
 
 The test suite covers the tokenizer, the layout engine, the option handling, range formatting, and two kinds of
 invariants over every `<pre>` example of the official Scarpet documentation plus the apps in `test/fixtures`:
@@ -190,8 +192,36 @@ src/
     range.ts          selection -> top level statements
 test/                 node --test suites and fixture apps
 docs/reference/       copy of the official Scarpet documentation used by the tests
-pnpm-lock.yaml        the only build dependency is the TypeScript toolchain
+pnpm-lock.yaml        the build dependencies (TypeScript, @vscode/vsce) are development only
+pnpm-workspace.yaml   the pnpm 12 build script decision (nothing is built on install)
 ```
+
+## Packaging
+
+There are two artifacts - the VS Code extension and the npm package of the CLI - and both are built from the same
+`files` allow-list in `package.json`, so they always contain exactly the same compiled code (and nothing else):
+
+```console
+pnpm run package        # -> scarpet-formatter-0.1.0.vsix   (VS Code extension)
+pnpm run package:cli    # -> scarpet-formatter-0.1.0.tgz    (scarpet-fmt for npm)
+```
+
+`pnpm run package` drives [`@vscode/vsce`](https://github.com/microsoft/vscode-vsce). It runs `vscode:prepublish`
+first, so a package always contains a fresh compile of the current sources, and it stops when the compiler reports an
+error. The result is 30 files and about 60 KB: `out/src/**`, `formatter.json`, `README.md`, `LICENSE.md` and
+`package.json` - no TypeScript sources, no tests, no `docs/`, no `node_modules` (the formatter has no runtime
+dependencies at all, which is also why it is packaged with `--no-dependencies`).
+
+Install the VSIX into your own VS Code with:
+
+```console
+code --install-extension scarpet-formatter-0.1.0.vsix
+```
+
+or with *Extensions: Install from VSIX...* in the command palette. Publishing needs a Marketplace publisher that
+matches the `publisher` field and a personal access token: `pnpm exec vsce publish` for a release,
+`pnpm exec vsce publish --pre-release` for a pre-release, `pnpm publish` for the CLI.
+`pnpm exec vsce ls --tree` lists what would be packaged without packaging it.
 
 ## Known limitations
 

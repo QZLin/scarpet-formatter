@@ -1,7 +1,7 @@
 # Reference material
 
 This folder holds copies of upstream material the formatter is written against. Nothing here is
-part of the published extension (`docs/**` is excluded in `.vscodeignore`).
+part of the published extension (`docs/` is not in the `files` allow-list of `package.json`).
 
 * `scarpet-Full.md` — the official Scarpet language documentation from
   [gnembon/fabric-carpet](https://github.com/gnembon/fabric-carpet/blob/master/docs/scarpet/Full.md)

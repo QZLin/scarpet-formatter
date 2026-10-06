@@ -56,6 +56,8 @@
         "watch": "tsc -watch -p ./",
         "test": "pnpm run compile && node --test out/test",
         "fmt": "node ./out/src/cli.js",
+        "package": "vsce package --no-dependencies",
+        "package:cli": "pnpm pack",
         "prepack": "pnpm run compile"
     },
     "contributes": {
@@ -190,6 +192,7 @@
     "devDependencies": {
         "@types/node": "^20.14.0",
         "@types/vscode": "^1.75.0",
+        "@vscode/vsce": "^4.0.0",
         "typescript": "^5.6.3"
     }
 }
