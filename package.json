@@ -1,22 +1,28 @@
 {
     "name": "scarpet-formatter",
     "displayName": "Scarpet Formatter",
-    "description": "Format ,prettify and beautify Scarpet code by using shortcuts, context menu or CLI",
-    "version": "0.0.1",
-    "publisher": "Q.Z.Lin",
+    "description": "A real formatter for Scarpet (Carpet mod) scripts - VS Code extension and CLI",
+    "version": "0.1.0",
+    "publisher": "QZLin",
     "galleryBanner": {
         "color": "#e5e5e5",
         "theme": "light"
     },
     "categories": [
-        "Other",
         "Formatters",
-        "Programming Languages"
+        "Programming Languages",
+        "Other"
     ],
-    "license": "GPL-V3",
+    "keywords": [
+        "scarpet",
+        "carpet",
+        "minecraft",
+        "formatter",
+        "beautify"
+    ],
+    "license": "GPL-3.0-or-later",
     "bugs": {
-        "url": "https://github.com/qzlin/scarpet-formatter/issues",
-        "email": "qzlin01@163.com"
+        "url": "https://github.com/qzlin/scarpet-formatter/issues"
     },
     "homepage": "https://github.com/qzlin/scarpet-formatter/blob/master/README.md",
     "repository": {
@@ -24,7 +30,8 @@
         "url": "https://github.com/qzlin/scarpet-formatter"
     },
     "engines": {
-        "vscode": "^1.6.0"
+        "vscode": "^1.75.0",
+        "node": ">=16"
     },
     "activationEvents": [
         "onLanguage:scarpet",
@@ -32,37 +39,157 @@
         "onCommand:ScarpetFormatter.formatterConfig",
         "onCommand:ScarpetFormatter.formatterCreateLocalConfig"
     ],
+    "main": "./out/src/extension",
+    "bin": {
+        "scarpet-fmt": "./out/src/cli.js"
+    },
+    "files": [
+        "out/src",
+        "formatter.json",
+        "README.md",
+        "LICENSE.md"
+    ],
+    "scripts": {
+        "vscode:prepublish": "pnpm run clean && tsc -p ./",
+        "clean": "node -e \"require('fs').rmSync('out',{recursive:true,force:true})\"",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "test": "pnpm run compile && node --test out/test",
+        "fmt": "node ./out/src/cli.js",
+        "prepack": "pnpm run compile"
+    },
     "contributes": {
         "commands": [
             {
                 "command": "ScarpetFormatter.formatting",
-                "title": "Formatter"
+                "title": "Format Scarpet Code",
+                "category": "Scarpet"
             },
             {
                 "command": "ScarpetFormatter.formatterConfig",
-                "title": "Formatter Config"
+                "title": "Open Formatter Config",
+                "category": "Scarpet"
             },
             {
                 "command": "ScarpetFormatter.formatterCreateLocalConfig",
-                "title": "Formatter Create Local Config"
+                "title": "Create Local Formatter Config",
+                "category": "Scarpet"
             }
-        ]
-    },
-    "main": "./out/src/extension",
-    "scripts": {
-        "vscode:prepublish": "tsc -p ./",
-        "compile": "tsc -watch -p ./",
-        "postinstall": "node ./node_modules/vscode/bin/install"
-    },
-    "dependencies": {
-        "js-beautify": "^1.6.4",
-        "mkdirp": "^0.5.1"
+        ],
+        "configuration": {
+            "title": "Scarpet Formatter",
+            "properties": {
+                "scarpetFormatter.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Format Scarpet documents. Turn off to disable this formatter entirely."
+                },
+                "scarpetFormatter.indentSize": {
+                    "type": "number",
+                    "default": 2,
+                    "minimum": 0,
+                    "maximum": 16,
+                    "description": "Number of spaces used for one indentation level."
+                },
+                "scarpetFormatter.useTabs": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Indent with tab characters instead of spaces."
+                },
+                "scarpetFormatter.lineWidth": {
+                    "type": "number",
+                    "default": 120,
+                    "minimum": 20,
+                    "description": "Preferred maximum line width. Lines that would exceed it get broken at call arguments, container elements or statement boundaries."
+                },
+                "scarpetFormatter.spaceAroundColon": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Print spaces around the ':' accessor operator ('list : 0' instead of 'list:0')."
+                },
+                "scarpetFormatter.spaceAroundMatch": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Print spaces around the '~' matching operator."
+                },
+                "scarpetFormatter.spaceAroundOperators": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Print spaces around binary operators (+, -, *, /, ==, &&, ->, ...)."
+                },
+                "scarpetFormatter.spaceAfterComma": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Print a space after commas when the surrounding container stays on one line."
+                },
+                "scarpetFormatter.trailingComma": {
+                    "type": "string",
+                    "enum": [
+                        "preserve",
+                        "always",
+                        "never"
+                    ],
+                    "default": "preserve",
+                    "description": "Add, remove or keep trailing commas in multi-line lists and maps."
+                },
+                "scarpetFormatter.preserveContainerBreaks": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Keep a list or map multi-line when the source already had it multi-line."
+                },
+                "scarpetFormatter.expandStatementBlocks": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Put every ';' separated statement of a function body on its own line."
+                },
+                "scarpetFormatter.preserveBlankLines": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Keep (and limit) blank lines between statements."
+                },
+                "scarpetFormatter.maxBlankLines": {
+                    "type": "number",
+                    "default": 1,
+                    "minimum": 0,
+                    "description": "Maximum number of consecutive blank lines kept inside a statement block."
+                },
+                "scarpetFormatter.maxBlankLinesTopLevel": {
+                    "type": "number",
+                    "default": 2,
+                    "minimum": 0,
+                    "description": "Maximum number of consecutive blank lines kept between top level statements."
+                },
+                "scarpetFormatter.endWithNewline": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "End the formatted file with a single newline."
+                },
+                "scarpetFormatter.lineEnding": {
+                    "type": "string",
+                    "enum": [
+                        "auto",
+                        "lf",
+                        "crlf"
+                    ],
+                    "default": "auto",
+                    "description": "Line ending used in the formatted output. 'auto' keeps the dominant line ending of the file."
+                },
+                "scarpetFormatter.safetyCheck": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Verify that formatting did not change the token stream, and leave the document untouched if it did."
+                }
+            }
+        },
+        "configurationDefaults": {
+            "[scarpet]": {
+                "editor.defaultFormatter": "qzlin.scarpet-formatter"
+            }
+        }
     },
     "devDependencies": {
-        "@types/node": "^6.0.40",
-        "@types/resolve-from": "0.0.18",
-        "@types/strip-json-comments": "^0.0.28",
-        "typescript": "^2.0.3",
-        "vscode": "^1.1.37"
+        "@types/node": "^20.14.0",
+        "@types/vscode": "^1.75.0",
+        "typescript": "^5.6.3"
     }
 }

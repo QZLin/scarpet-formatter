@@ -1,0 +1,66 @@
+{
+    // Scarpet Formatter settings.
+    //
+    // This file is the bundled reference copy. It is read as the lowest priority
+    // layer, so everything below is commented out to keep the built in defaults:
+    //   defaults  <  this file  <  .vscode/formatter.json  <  VS Code settings
+    //
+    // Use the command "Scarpet: Create Local Formatter Config" to copy it into
+    // .vscode/formatter.json for a project, or set anything below in the VS Code
+    // settings UI under "scarpetFormatter.". Comments and trailing commas are fine.
+    "scarpet": {
+        // Number of spaces per indentation level, 0-16.
+        // "indentSize": 2,
+
+        // Indent with tab characters instead of spaces.
+        // "useTabs": false,
+
+        // Preferred maximum line width. Lines that would be longer get broken at
+        // call arguments, container elements or statement boundaries. 0 disables
+        // wrapping completely.
+        // "lineWidth": 120,
+
+        // Print spaces around the ':' accessor operator: "list : 0".
+        // "spaceAroundColon": false,
+
+        // Print spaces around the '~' matching operator.
+        // "spaceAroundMatch": true,
+
+        // Print spaces around binary operators (+, -, *, /, ==, &&, ->, ...).
+        // "spaceAroundOperators": true,
+
+        // Print a space after commas when a container stays on one line.
+        // "spaceAfterComma": true,
+
+        // "preserve" keeps the trailing commas a list or map was written with,
+        // "always" adds them when the container is broken over several lines,
+        // "never" removes them.
+        // "trailingComma": "preserve",
+
+        // Keep a list or map multi-line when the source already had it multi-line.
+        // "preserveContainerBreaks": true,
+
+        // Put every ';' separated statement of a function body on its own line.
+        // "expandStatementBlocks": true,
+
+        // Keep (and limit) the blank lines of the source.
+        // "preserveBlankLines": true,
+        // "maxBlankLines": 1,
+        // "maxBlankLinesTopLevel": 2,
+
+        // End the formatted file with a single newline.
+        // "endWithNewline": true,
+
+        // "auto" keeps the dominant line ending of the file, or force "lf"/"crlf".
+        // "lineEnding": "auto",
+
+        // Re-read the formatted text and leave the file untouched if the token
+        // stream changed. Leave this on unless you are debugging the formatter.
+        // "safetyCheck": true,
+
+        // js-beautify names still work if you are migrating an old config, e.g.
+        // "indent_size": 2,
+        // "wrap_line_length": 0,
+        // "end_with_newline": true,
+    }
+}

@@ -1,279 +1,214 @@
-// 'use strict';
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
+import { OptionBag, parseConfig } from './scarpet/config';
+import { formatScarpetWithDetail } from './scarpet/format';
+import { DEFAULT_OPTIONS } from './scarpet/options';
+import { topLevelStatementSpan } from './scarpet/range';
 
-import path = require('path');
-import fs = require('fs');
-import jsbeautify = require('js-beautify');
-import mkdirp = require('mkdirp');
+const LANGUAGE_ID = 'scarpet';
+const CONFIG_SECTION = 'scarpetFormatter';
+const CONFIG_FILE_NAME = 'formatter.json';
 
-export function format(document: vscode.TextDocument, range: vscode.Range) {
-    if (range === null) {
-        var start = new vscode.Position(0, 0);
-        var end = new vscode.Position(document.lineCount - 1, document.lineAt(document.lineCount - 1).text.length);
-        range = new vscode.Range(start, end);
-    }
+export function activate(context: vscode.ExtensionContext): void {
+    const formatter = new ScarpetFormatter(context);
 
-    var result: vscode.TextEdit[] = [];
-
-    var content = document.getText(range);
-
-    var formatted = beatify(content, document.languageId);
-
-    if (formatted) {
-        result.push(new vscode.TextEdit(range, formatted));
-    }
-
-    return result;
-};
-function getRootPath() {
-    return vscode.workspace.rootPath || '.';
+    context.subscriptions.push(formatter.output, formatter);
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ScarpetFormatter.formatting', () => formatter.formatActiveEditor(true)),
+        vscode.commands.registerCommand('ScarpetFormatter.formatterConfig', () => formatter.openConfig()),
+        vscode.commands.registerCommand('ScarpetFormatter.formatterCreateLocalConfig', () => formatter.createLocalConfig()),
+        vscode.languages.registerDocumentFormattingEditProvider(LANGUAGE_ID, {
+            provideDocumentFormattingEdits: (document) => formatter.provideEdits(document),
+        }),
+        vscode.languages.registerDocumentRangeFormattingEditProvider(LANGUAGE_ID, {
+            provideDocumentRangeFormattingEdits: (document, range) => formatter.provideEdits(document, range),
+        })
+    );
 }
 
-function beatify(documentContent: String, languageId) {
-
-    var global = path.join(__dirname, 'formatter.json');
-    var local = path.join(getRootPath(), '.vscode', 'formatter.json');
-
-    var beatiFunc = null;
-
-    switch (languageId) {
-        case 'scarpet':
-            beatiFunc = jsbeautify.js;
-            break;
-        default:
-            showMesage('Sorry, this language is not supported. Only support Javascript, CSS and HTML.');
-            break;
-    }
-    if (!beatiFunc) return;
-    var beutifyOptions;
-
-    try {
-        beutifyOptions = require(local)[languageId];
-    } catch (error) {
-        try {
-            beutifyOptions = require(global)[languageId];
-        } catch (error) {
-            beutifyOptions = {};
-        }
-    }
-    var content = documentContent.replace(/->/g, '/*->*/ =');
-    // content=content.replaceAll(';','/**/ ,')
-    var result = beatiFunc(content, beutifyOptions)
-    result = result.replaceAll('/*->*/ =', '->');
-    // result = result.replaceAll('/**/ ,', ';')
-
-    return result;
+export function deactivate(): void {
+    // nothing to release
 }
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+class ScarpetFormatter {
+    readonly output = vscode.window.createOutputChannel('Scarpet Formatter');
+    private readonly reportedSkips = new Map<string, string>();
 
-    var docType: Array<string> = ['scarpet'];
+    constructor(private readonly context: vscode.ExtensionContext) {}
 
-    for (var i = 0, l = docType.length; i < l; i++) {
-        registerDocType(docType[i]);
+    dispose(): void {
+        this.reportedSkips.clear();
     }
 
-    let formatter = new Formatter();
+    // ------------------------------------------------------------- formatting
 
-    context.subscriptions.push(vscode.commands.registerCommand('ScarpetFormatter.formatting', () => {
-        formatter.beautify();
-    }));
+    /**
+     * Formats the whole document, or - for a selection - the top level
+     * statements the selection touches.
+     */
+    provideEdits(document: vscode.TextDocument, range?: vscode.Range): vscode.TextEdit[] {
+        const { enabled, options } = this.optionsFor(document.uri);
+        if (!enabled) return [];
 
+        const text = document.getText();
 
-    context.subscriptions.push(vscode.commands.registerCommand('ScarpetFormatter.formatterConfig', () => {
-
-        formatter.openConfig(
-            path.join(getRootPath(), '.vscode', 'formatter.json'),
-            function () {
-                showMesage('[Local]  After editing the file, remember to Restart VScode');
-            },
-            function () {
-                var fileName = path.join(__dirname, 'formatter.json');
-                formatter.openConfig(
-                    fileName,
-                    function () {
-                        showMesage('[Golbal]  After editing the file, remember to Restart VScode');
-                    },
-                    function () {
-                        showMesage('Not found file: ' + fileName);
-                    })
-            })
-    }));
-
-
-    context.subscriptions.push(vscode.commands.registerCommand('ScarpetFormatter.formatterCreateLocalConfig', () => {
-        formatter.generateLocalConfig();
-    }));
-
-    context.subscriptions.push(vscode.workspace.onWillSaveTextDocument(e => {
-        formatter.onSave(e)
-    }));
-
-
-    function registerDocType(type) {
-        context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(type, {
-            provideDocumentFormattingEdits: (document, options, token) => {
-                return formatter.registerBeautify(null)
-            }
-        }));
-        context.subscriptions.push(vscode.languages.registerDocumentRangeFormattingEditProvider(type, {
-            provideDocumentRangeFormattingEdits: (document, range, options, token) => {
-                var start = new vscode.Position(0, 0);
-                var end = new vscode.Position(document.lineCount - 1, document.lineAt(document.lineCount - 1).text.length);
-                return formatter.registerBeautify(new vscode.Range(start, end))
-            }
-        }));
-    }
-
-
-
-}
-
-class Formatter {
-
-
-    public beautify() {
-        // Create as needed
-        let window = vscode.window;
-        let range;
-        // Get the current text editor
-        let activeEditor = window.activeTextEditor;
-        if (!activeEditor) {
-            return;
-        }
-
-        let document = activeEditor.document;
-
-        if (range === null) {
-            var start = new vscode.Position(0, 0);
-            var end = new vscode.Position(document.lineCount - 1, document.lineAt(document.lineCount - 1).text.length);
-            range = new vscode.Range(start, end);
-        }
-
-        var result: vscode.TextEdit[] = [];
-
-        var content = document.getText(range);
-
-        var formatted = beatify(content, document.languageId);
-        if (formatted) {
-            return activeEditor.edit(function (editor) {
-                var start = new vscode.Position(0, 0);
-                var end = new vscode.Position(document.lineCount - 1, document.lineAt(document.lineCount - 1).text.length);
-                range = new vscode.Range(start, end);
-                return editor.replace(range, formatted);
+        if (range && !isWholeDocument(document, range)) {
+            const span = topLevelStatementSpan(text, document.offsetAt(range.start), document.offsetAt(range.end));
+            if (!span) return [];
+            const result = formatScarpetWithDetail(text.slice(span.start, span.end), {
+                ...options,
+                endWithNewline: false,
             });
+            this.reportSkip(document, result);
+            if (!result.changed) return [];
+            const replaceRange = new vscode.Range(document.positionAt(span.start), document.positionAt(span.end));
+            return [vscode.TextEdit.replace(replaceRange, result.text)];
         }
 
+        const result = formatScarpetWithDetail(text, options);
+        this.reportSkip(document, result);
+        if (!result.changed) return [];
+        const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(text.length));
+        return [vscode.TextEdit.replace(fullRange, result.text)];
     }
 
-    public registerBeautify(range) {
-
-        // Create as needed
-        let window = vscode.window;
-
-        // Get the current text editor
-        let editor = window.activeTextEditor;
-        if (!editor) {
+    /**
+     * Files the formatter refuses to touch are worth a line in the output
+     * channel - otherwise a silent format-on-save looks like a broken formatter.
+     */
+    private reportSkip(document: vscode.TextDocument, result: { skipped: boolean; reason: string }): void {
+        const key = document.uri.toString();
+        if (!result.skipped) {
+            this.reportedSkips.delete(key);
             return;
         }
-        let document = editor.document;
-
-        return format(document, range);
+        if (this.reportedSkips.get(key) === result.reason) return;
+        this.reportedSkips.set(key, result.reason);
+        this.output.appendLine(`${vscode.workspace.asRelativePath(document.uri)}: left untouched, ${result.reason}`);
     }
 
-    public generateLocalConfig() {
-        var local = path.join(getRootPath(), '.vscode', 'formatter.json');
+    formatActiveEditor(notify: boolean): void {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            if (notify) void vscode.window.showInformationMessage('Scarpet Formatter: no active editor.');
+            return;
+        }
 
-        var content = fs.readFileSync(path.join(__dirname, 'formatter.json')).toString('utf8');
-
-        mkdirp.sync(path.dirname(local));
-        fs.stat(local, function (err, stat) {
-            if (err == null) {
-                showMesage('Local config file existed: ' + local);
-            } else if (err.code == 'ENOENT') {
-                fs.writeFile(local, content, function (e) {
-                    showMesage('Generate local config file: ' + local)
-                })
-            } else {
-                showMesage('Some other error: ' + err.code);
-            }
-        });
-    }
-
-    public openConfig(filename, succ, fail) {
-        vscode.workspace.openTextDocument(filename).then(function (textDocument) {
-            if (!textDocument) {
-                showMesage('Can not open file!');
-                return;
-            }
-            vscode.window.showTextDocument(textDocument).then(function (editor) {
-                if (!editor) {
-                    showMesage('Can not show document!');
+        const edits = this.provideEdits(editor.document);
+        if (edits.length === 0) {
+            if (notify) {
+                const { enabled, options } = this.optionsFor(editor.document.uri);
+                if (!enabled) {
+                    void vscode.window.showInformationMessage(
+                        'Scarpet Formatter is turned off (scarpetFormatter.enable).'
+                    );
                     return;
                 }
-                !!succ && succ();
-
-            }, function () {
-                showMesage('Can not Show file: ' + filename);
-                return;
-            });
-        }, function () {
-            !!fail && fail();
+                const detail = formatScarpetWithDetail(editor.document.getText(), options);
+                void vscode.window.showInformationMessage(
+                    detail.skipped ? `Scarpet Formatter: skipped, ${detail.reason}.` : 'Scarpet: already formatted.'
+                );
+            }
             return;
+        }
+
+        void editor.edit((builder) => {
+            for (const edit of edits) builder.replace(edit.range, edit.newText);
         });
     }
 
-    public onSave(e: vscode.TextDocumentWillSaveEvent) {
-        var { document } = e;
-        var docType: Array<string> = ['css', 'scss', 'javascript', 'html', 'json']
-        var global = path.join(__dirname, 'formatter.json');
-        var local = path.join(getRootPath(), '.vscode', 'formatter.json');
-        var onSave;
+    // ------------------------------------------------------------ config file
+
+    private optionsFor(uri?: vscode.Uri): { enabled: boolean; options: OptionBag } {
+        const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION, uri ?? null);
+        const options: OptionBag = {};
+
+        Object.assign(options, this.readConfigFile(this.bundledConfigPath()));
+        const local = this.localConfigPath(uri);
+        if (local) Object.assign(options, this.readConfigFile(local));
+        Object.assign(options, explicitSettings(configuration));
+
+        return { enabled: configuration.get<boolean>('enable', true), options };
+    }
+
+    private bundledConfigPath(): string {
+        return path.join(this.context.extensionPath, CONFIG_FILE_NAME);
+    }
+
+    private localConfigPath(uri?: vscode.Uri): string | null {
+        const folder = uri
+            ? vscode.workspace.getWorkspaceFolder(uri)
+            : (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0]) || null;
+        if (!folder) return null;
+        return path.join(folder.uri.fsPath, '.vscode', CONFIG_FILE_NAME);
+    }
+
+    private readConfigFile(file: string): OptionBag {
+        try {
+            return parseConfig(fs.readFileSync(file, 'utf8'));
+        } catch {
+            return {};
+        }
+    }
+
+    openConfig(): void {
+        const local = this.localConfigPath(vscode.window.activeTextEditor?.document.uri);
+        const target = local && fs.existsSync(local) ? local : this.bundledConfigPath();
+        void vscode.workspace.openTextDocument(target).then(
+            (document) => void vscode.window.showTextDocument(document),
+            () => void vscode.window.showWarningMessage(`Scarpet Formatter: cannot open ${target}.`)
+        );
+    }
+
+    createLocalConfig(): void {
+        const local = this.localConfigPath(vscode.window.activeTextEditor?.document.uri);
+        if (!local) {
+            void vscode.window.showWarningMessage(
+                'Scarpet Formatter: open a folder first to create a local .vscode/formatter.json.'
+            );
+            return;
+        }
+        if (fs.existsSync(local)) {
+            void vscode.workspace.openTextDocument(local).then((document) => void vscode.window.showTextDocument(document));
+            void vscode.window.showInformationMessage(`Scarpet Formatter: ${local} already exists.`);
+            return;
+        }
 
         try {
-            onSave = require(local).onSave;
+            fs.mkdirSync(path.dirname(local), { recursive: true });
+            fs.copyFileSync(this.bundledConfigPath(), local);
         } catch (error) {
-            try {
-                onSave = require(global).onSave;
-            } catch (error) {
-                onSave = true;
-            }
-        }
-
-        if (!onSave) {
-            return;
-        }
-        if (docType.indexOf(document.languageId) == -1) {
+            const message = error instanceof Error ? error.message : String(error);
+            void vscode.window.showErrorMessage(`Scarpet Formatter: cannot write ${local}: ${message}`);
             return;
         }
 
-
-        var start = new vscode.Position(0, 0);
-        var end = new vscode.Position(document.lineCount - 1, document.lineAt(document.lineCount - 1).text.length);
-        var range = new vscode.Range(start, end);
-
-        var result: vscode.TextEdit[] = [];
-
-        var content = document.getText(range);
-
-        var formatted = beatify(content, document.languageId);
-
-        if (formatted) {
-            var start = new vscode.Position(0, 0);
-            var end = new vscode.Position(document.lineCount - 1, document.lineAt(document.lineCount - 1).text.length);
-            range = new vscode.Range(start, end);
-            var edit = vscode.TextEdit.replace(range, formatted);
-            e.waitUntil(Promise.resolve([edit]));
-        }
-
+        void vscode.workspace.openTextDocument(local).then((document) => void vscode.window.showTextDocument(document));
+        void vscode.window.showInformationMessage(`Scarpet Formatter: created ${local}.`);
     }
 }
 
-function showMesage(msg: string) {
-    vscode.window.showInformationMessage(msg);
+/** Settings the user really set, as opposed to the ones VS Code fills in. */
+function explicitSettings(configuration: vscode.WorkspaceConfiguration): OptionBag {
+    const bag: OptionBag = {};
+    for (const key of Object.keys(DEFAULT_OPTIONS)) {
+        const info = configuration.inspect(key);
+        if (!info) continue;
+        const value =
+            info.workspaceFolderLanguageValue ??
+            info.workspaceFolderValue ??
+            info.workspaceLanguageValue ??
+            info.workspaceValue ??
+            info.globalLanguageValue ??
+            info.globalValue;
+        if (value !== undefined) bag[key] = value;
+    }
+    return bag;
 }
 
+function isWholeDocument(document: vscode.TextDocument, range: vscode.Range): boolean {
+    if (range.start.line !== 0 || range.start.character !== 0) return false;
+    const lastLine = document.lineCount - 1;
+    return range.end.line >= lastLine;
+}
